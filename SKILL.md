@@ -6,7 +6,7 @@ description: >
   health recommendations. Use when the user mentions blood work, lab results,
   biomarkers, biological age, health optimization, bloodwork analysis, metabolic
   health, lipid panel, CBC, or comprehensive metabolic panel.
-version: 0.1.0
+version: 0.2.0
 user-invocable: true
 allowed-tools:
   - bash
@@ -30,11 +30,13 @@ AI-powered blood work analysis. Parse lab reports, calculate biological age, and
 
 ## Setup
 
-Before first use, install dependencies:
+Before first use, install dependencies and initialize directories:
 
 ```bash
-cd {baseDir}/scripts && npm install
+cd {baseDir}/scripts && npm install && npm run setup
 ```
+
+The setup script creates `~/otto-lab/reports/` (for lab report files) and `~/otto-lab/history/` (for saved analysis results). It is idempotent — safe to re-run.
 
 ## Capabilities
 
@@ -105,41 +107,22 @@ Once you have biomarkers (from parsing or manual entry), calculate biological ag
 echo '<biomarkers-json>' | node {baseDir}/scripts/bio-age.mjs
 ```
 
-Pass the biomarkers JSON via stdin. The script attempts two algorithms:
+Pass the biomarkers JSON via stdin. The script attempts three algorithms:
 
-- **PhenoAge** (Levine 2018) — requires: albumin, creatinine, glucose (converts mg/dL to mmol/L), CRP, lymphocyte%, MCV, RDW, ALP, WBC + chronological age. This is the gold standard.
+- **PhenoAge** (Levine 2018) — requires: albumin, creatinine, glucose, CRP, lymphocyte%, MCV, RDW, ALP, WBC + chronological age. Gold standard.
 - **KDM** (Klemera-Doubal) — uses any 3+ of: albumin, creatinine, glucose, CRP, lymphocyte%, MCV, RDW, ALP, WBC, systolic BP, BUN, HbA1c, total cholesterol.
-- **Metabolic Proxy** — fallback when CBC is unavailable. Uses glucose, HbA1c, CRP, triglycerides, HDL, LDL, insulin, uric acid.
+- **Metabolic Proxy** — fallback when CBC is unavailable.
 
-The script automatically selects the best available algorithm based on which biomarkers are present.
+The script automatically selects the best available algorithm.
 
 ### Presenting Results
-
-Format the biological age results clearly:
 
 - **Biological Age**: The calculated age (e.g., "32.4 years")
 - **Delta**: Difference from chronological age. Negative = younger (good). Positive = older (concerning).
 - **Algorithm Used**: PhenoAge, KDM, or Metabolic Proxy
 - **Top Drivers** (PhenoAge only): Which biomarkers contribute most to aging/protection
 
-Example presentation:
-
-```
-Biological Age: 32.4 years (chronological: 35)
-You are biologically 2.6 years younger than your calendar age.
-
-Top aging drivers:
-  - RDW (+0.42 years) — elevated red cell distribution width
-  - Glucose (+0.18 years) — slightly above optimal
-
-Top protective factors:
-  - Albumin (-0.31 years) — healthy liver protein
-  - Lymphocytes (-0.22 years) — strong immune function
-```
-
 ## 3. Generate Recommendations
-
-Generate evidence-based health recommendations for out-of-range biomarkers:
 
 ```bash
 echo '<biomarkers-json>' | node {baseDir}/scripts/recommend.mjs
@@ -149,35 +132,80 @@ The script evaluates each biomarker against clinical reference ranges and return
 
 ### Presenting Recommendations
 
-Group recommendations by priority (red/yellow/green) and category (supplement, diet, exercise, lifestyle, monitoring):
+Group by priority: **Red** (critical — recommend medical consultation), **Yellow** (suboptimal — lifestyle/supplement interventions), **Green** (optimal — affirm what's going well).
 
-- **Red** (critical): Values significantly outside normal range. Recommend medical consultation.
-- **Yellow** (suboptimal): Values outside optimal but within normal range. Lifestyle and supplement interventions.
-- **Green** (optimal): No action needed. Affirm what's going well.
+For each recommendation include the biomarker value vs. target range, specific protocol with dosage, evidence level (A/B/C/D), and expected timeline.
 
-For each recommendation include:
+## 4. Saving Results
 
-- The biomarker and current value vs. target range
-- Specific protocol (supplement name + dosage, dietary change, exercise type)
-- Evidence level (A/B/C/D) and guideline source
-- Expected timeline for improvement
+After completing an analysis, save the combined result for future tracking. Build a JSON object with the following structure and pipe it to `save-result.mjs`:
+
+```bash
+echo '<combined-json>' | node {baseDir}/scripts/save-result.mjs
+```
+
+The combined JSON should include:
+
+```json
+{
+  "source": { "type": "pdf", "filePath": "/path/to/report.pdf" },
+  "biomarkers": { "ldlC": 110, "hdl": 58, "..." : "..." },
+  "bioAge": { "algorithm": "PhenoAge", "biologicalAge": 32.4, "delta": -2.6 },
+  "recommendations": { "red": [], "yellow": [], "green": [] }
+}
+```
+
+The script writes to `~/otto-lab/history/YYYY-MM-DD-HHmmss.json` with version and timestamp stamps. Always save after a full analysis so the user can track progress over time.
+
+## 5. History & Trends
+
+View saved results and track biomarker trends:
+
+```bash
+# List all saved results (dates, bio age, red/yellow/green counts)
+node {baseDir}/scripts/history.mjs list
+
+# Show a specific saved result
+node {baseDir}/scripts/history.mjs show <filename>
+
+# Track a biomarker across all results (e.g., ldlC, hba1c, fastingGlucose)
+node {baseDir}/scripts/history.mjs trend <marker>
+```
+
+The `trend` command reports the direction of change (improving, worsening, or stable) based on clinical reference ranges from `@ottolab/shared`.
 
 ## Full Analysis Flow
 
-When the user asks for a complete blood work analysis, chain all three steps:
+When the user asks for a complete blood work analysis, chain all steps:
 
 1. Parse the report (or accept manual values)
 2. Calculate biological age
 3. Generate recommendations
-4. Present a unified health report with all findings
+4. Save the combined result with `save-result.mjs`
+5. Present the unified health report, then offer **What's Next**
 
-Always include a disclaimer that this is informational and not medical advice. Recommend discussing findings with a healthcare provider.
+### What's Next (post-analysis)
+
+After presenting the report, always offer these next steps:
+
+- **Priority actions**: Highlight the top 2-3 protocols from the red/yellow categories
+- **Retest timeline**: Suggest when to retest based on intervention timelines (typically 3-6 months)
+- **Track progress**: Mention they can review past results with `history.mjs list` and track specific markers with `history.mjs trend <marker>`
+- **Share with doctor**: Remind them to discuss findings with their healthcare provider
+
+Always include a disclaimer that this is informational and not medical advice.
+
+## Check for Updates
+
+```bash
+node {baseDir}/scripts/check-update.mjs
+```
+
+Reports installed vs. latest versions of `@ottolab/bio-age` and `@ottolab/shared`. If outdated, it provides the update command. Run this periodically or when the user asks about updates.
 
 ## Important Notes
 
-- All computation runs locally on the user's machine. No data is sent to external servers.
-- The PhenoAge algorithm is peer-reviewed (Levine, 2018, Aging journal). KDM is based on Klemera & Doubal, 2006.
-- Reference ranges are sourced from AHA/ACC, ADA, AACE, and KDIGO clinical guidelines.
-- See `references/biomarker-ranges.md` for the full reference range table.
-- See `references/protocol-evidence.md` for evidence sources behind recommendations.
-- See `references/example-output.md` for an example of a complete formatted report.
+- All computation runs locally. No data is sent to external servers.
+- PhenoAge: Levine et al., 2018, Aging. KDM: Klemera & Doubal, 2006.
+- Reference ranges: AHA/ACC, ADA, AACE, KDIGO guidelines.
+- See `references/` for biomarker ranges, protocol evidence, and example output.
