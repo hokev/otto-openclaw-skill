@@ -68,11 +68,13 @@ When the user provides a lab report (PDF file path, pasted text, or typed values
 
 ### If PDF file path is provided:
 
-```bash
-node {baseDir}/scripts/parse-report.mjs "<path-to-pdf>"
-```
+Read the PDF directly using your file reading capability. Extract all biomarker values from the report and structure them as JSON using the format below. You are the LLM — do not ask the user to type out values manually when you can read the file yourself.
 
-This outputs a JSON object with extracted biomarkers. Save the output for use in subsequent steps.
+For CSV files, use the extraction script:
+
+```bash
+node {baseDir}/scripts/parse-report.mjs "<path-to-csv>"
+```
 
 ### If text is pasted or values are typed manually:
 
