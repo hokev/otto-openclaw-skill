@@ -1,5 +1,5 @@
 ---
-name: otto-health
+name: otto-lab
 description: >
   Parse blood work lab reports (PDF or text), calculate biological age using
   the Levine PhenoAge and Klemera-Doubal algorithms, and generate evidence-based
@@ -24,7 +24,7 @@ metadata:
   }
 ---
 
-# Otto Health
+# Otto Lab
 
 AI-powered blood work analysis. Parse lab reports, calculate biological age, and get evidence-based health recommendations.
 

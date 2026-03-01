@@ -1,16 +1,16 @@
-# Otto Health — OpenClaw Skill
+# Otto Lab — OpenClaw Skill
 
 AI-powered blood work analysis for [OpenClaw](https://openclaw.ai). Parse lab reports, calculate biological age, and get evidence-based health recommendations.
 
 ## Install
 
 ```bash
-clawhub install otto-health
+clawhub install otto-lab
 ```
 
 ## Usage
 
-In OpenClaw, use the `/otto-health` command or ask naturally:
+In OpenClaw, use the `/otto-lab` command or ask naturally:
 
 - "Analyze my blood work" (then paste values or provide a PDF path)
 - "Calculate my biological age"

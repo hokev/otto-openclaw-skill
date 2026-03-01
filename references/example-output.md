@@ -1,4 +1,4 @@
-# Example Otto Health Report
+# Example Otto Lab Report
 
 This is an example of a complete formatted health report. Use this as a template for presenting results to users.
 
