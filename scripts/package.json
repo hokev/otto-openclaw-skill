@@ -1,0 +1,10 @@
+{
+  "name": "otto-health-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@otto/bio-age": "file:../../bio-age",
+    "@otto/shared": "file:../../shared"
+  }
+}
