@@ -14,7 +14,7 @@ import {
   calculateMetabolicProxy,
   convertToPhenoAgeUnits,
   calculateKDM,
-} from '@otto/bio-age';
+} from '@ottohq/bio-age';
 
 // Read JSON from stdin
 const chunks = [];

@@ -6,13 +6,13 @@
  * Usage:
  *   node parse-report.mjs <file-path>        # PDF (placeholder) or CSV
  *
- * CSV files are parsed directly via @otto/extraction.
+ * CSV files are parsed directly via @ottohq/extraction.
  * PDF extraction requires an LLM provider (not available in standalone mode).
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
-import { runExtractionPipeline } from '@otto/extraction';
+import { runExtractionPipeline } from '@ottohq/extraction';
 
 const filePath = process.argv[2];
 

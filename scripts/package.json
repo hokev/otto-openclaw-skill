@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@otto/bio-age": "file:../../bio-age",
-    "@otto/shared": "file:../../shared"
+    "@ottohq/bio-age": "^0.1.0",
+    "@ottohq/shared": "^0.1.0"
   }
 }
