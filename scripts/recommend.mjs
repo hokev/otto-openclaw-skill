@@ -6,11 +6,11 @@
  * Usage: echo '{"albumin":4.2,"ldlC":145,...}' | node recommend.mjs
  * Output: JSON with categorized recommendations for out-of-range biomarkers.
  *
- * Reads biomarker JSON from stdin. Uses BIOMARKER_RANGES from @ottohq/shared
+ * Reads biomarker JSON from stdin. Uses BIOMARKER_RANGES from @ottolab/shared
  * to evaluate each marker against clinical reference ranges.
  */
 
-import { BIOMARKER_RANGES } from '@ottohq/shared';
+import { BIOMARKER_RANGES } from '@ottolab/shared';
 
 // Map from biomarker JSON keys to BIOMARKER_RANGES keys
 const KEY_MAP = {
