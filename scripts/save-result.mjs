@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { readFileSync } from 'node:fs';
 
-const HISTORY_DIR = join(homedir(), 'otto-lab', 'history');
+const HISTORY_DIR = join(process.env.OTTO_LAB_DIR || join(homedir(), 'otto-lab'), 'history');
 const PKG_PATH = new URL('./package.json', import.meta.url);
 
 // Read stdin

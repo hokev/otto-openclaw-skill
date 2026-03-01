@@ -38,6 +38,16 @@ cd {baseDir}/scripts && npm install && npm run setup
 
 The setup script creates `~/otto-lab/reports/` (for lab report files) and `~/otto-lab/history/` (for saved analysis results). It is idempotent — safe to re-run.
 
+### Container / remote environments
+
+If running inside a container or remote machine where `~` is not the user's real home directory, set `OTTO_LAB_DIR` to a persistent, host-accessible path before running any script:
+
+```bash
+export OTTO_LAB_DIR=/path/to/persistent/otto-lab
+```
+
+All scripts (`setup.mjs`, `save-result.mjs`, `history.mjs`) respect this variable. When not set, they default to `~/otto-lab/`.
+
 ## Capabilities
 
 Otto has three core capabilities that can be used independently or chained together:

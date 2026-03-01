@@ -11,7 +11,7 @@ import { mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-const BASE = join(homedir(), 'otto-lab');
+const BASE = process.env.OTTO_LAB_DIR || join(homedir(), 'otto-lab');
 const DIRS = [
   join(BASE, 'reports'),
   join(BASE, 'history'),

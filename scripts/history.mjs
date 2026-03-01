@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { BIOMARKER_RANGES } from '@ottolab/shared';
 
-const HISTORY_DIR = join(homedir(), 'otto-lab', 'history');
+const HISTORY_DIR = join(process.env.OTTO_LAB_DIR || join(homedir(), 'otto-lab'), 'history');
 
 const [command, arg] = process.argv.slice(2);
 
