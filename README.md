@@ -22,32 +22,54 @@ cd ~/.openclaw/skills/otto-lab/scripts && npm install
 npm run setup
 ```
 
-This creates `~/otto-lab/reports/` and `~/otto-lab/history/` for storing lab files and analysis history.
+This creates `~/otto-lab/reports/` and `~/otto-lab/history/` for storing lab files and analysis history. It also checks that PDF parsing dependencies are installed.
+
+### Container / remote environments
+
+If running inside a container or on a remote machine, set `OTTO_LAB_DIR` to a persistent, host-accessible path so your data survives container restarts:
+
+```bash
+export OTTO_LAB_DIR=/path/to/persistent/otto-lab
+npm run setup
+```
+
+All scripts respect this variable. When not set, they default to `~/otto-lab/`.
+
+If `setup` reports that `pdftotext` is missing, install it:
+
+```bash
+apt-get update && apt-get install -y poppler-utils
+```
 
 ## What to Expect
 
 Otto Lab runs a 3-step analysis when you share blood work:
 
-1. **Parse** — Extracts biomarkers from a PDF, CSV, or pasted values
+1. **Parse** — Reads your lab report PDF or CSV and extracts biomarker values
 2. **Bio Age** — Calculates your biological age using peer-reviewed algorithms (PhenoAge, KDM)
 3. **Recommend** — Generates evidence-based protocols for out-of-range markers, grouped by priority
 
 After the analysis, Otto saves the result and presents next steps: priority actions, retest timeline, and a reminder to share findings with your doctor.
 
-### Example conversation
+### How to provide your lab report
 
-> **You:** Analyze my blood work — here are my latest results: LDL 145, HDL 52, triglycerides 180, HbA1c 5.8, fasting glucose 102, CRP 2.1, vitamin D 22. I'm 38.
->
-> **OpenClaw:** Runs the analysis pipeline, calculates bio age, flags LDL and vitamin D as suboptimal, and presents a prioritized action plan with supplement dosages and timelines.
+Place your lab report PDF or CSV in the reports directory:
+
+```
+~/otto-lab/reports/        # default location
+$OTTO_LAB_DIR/reports/     # if OTTO_LAB_DIR is set
+```
+
+Then ask OpenClaw to analyze it. It will find the file, read the PDF, extract biomarkers, and run the full analysis pipeline.
 
 ## Your Data
 
 All analysis results are saved locally:
 
 ```
-~/otto-lab/
-├── reports/     # Place lab report PDFs/CSVs here
-└── history/     # Saved analysis results (one JSON per analysis)
+~/otto-lab/                # or $OTTO_LAB_DIR
+├── reports/               # Place lab report PDFs/CSVs here
+└── history/               # Saved analysis results (one JSON per analysis)
 ```
 
 View past results and track biomarker trends:

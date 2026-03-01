@@ -68,7 +68,15 @@ When the user provides a lab report (PDF file path, pasted text, or typed values
 
 ### If PDF file path is provided:
 
-Read the PDF directly using your file reading capability. Extract all biomarker values from the report and structure them as JSON using the format below. You are the LLM — do not ask the user to type out values manually when you can read the file yourself.
+Read the PDF directly using your file reading capability (the Read tool). Extract all biomarker values from the report and structure them as JSON using the format below. You are the LLM — do not ask the user to type out values manually when you can read the file yourself.
+
+If reading the PDF fails because `pdftotext`/`poppler-utils` is not installed, install it first:
+
+```bash
+apt-get update && apt-get install -y poppler-utils
+```
+
+Then retry reading the PDF. Do NOT fall back to asking the user to manually type values — install the dependency and read the file.
 
 For CSV files, use the extraction script:
 
