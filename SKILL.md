@@ -66,23 +66,17 @@ Otto has three core capabilities that can be used independently or chained toget
 
 When the user provides a lab report (PDF file path, pasted text, or typed values):
 
-### If PDF file path is provided:
+### If a PDF or CSV file path is provided:
 
-Read the PDF directly using your file reading capability (the Read tool). Extract all biomarker values from the report and structure them as JSON using the format below. You are the LLM — do not ask the user to type out values manually when you can read the file yourself.
-
-If reading the PDF fails because `pdftotext`/`poppler-utils` is not installed, install it first:
+Run `parse-report.mjs` to extract text from the file:
 
 ```bash
-apt-get update && apt-get install -y poppler-utils
+node {baseDir}/scripts/parse-report.mjs "<path-to-file>"
 ```
 
-Then retry reading the PDF. Do NOT fall back to asking the user to manually type values — install the dependency and read the file.
+For PDFs, this outputs `{ "status": "pdf_extracted", "text": "..." }` with the raw text content. You must then read the extracted text and identify all biomarker values, structuring them as JSON using the format below. You are the LLM — do the extraction yourself from the text. Do NOT ask the user to type out values manually.
 
-For CSV files, use the extraction script:
-
-```bash
-node {baseDir}/scripts/parse-report.mjs "<path-to-csv>"
-```
+For CSVs, the script outputs structured biomarker JSON directly.
 
 ### If text is pasted or values are typed manually:
 

@@ -10,15 +10,13 @@
 import { mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { execSync } from 'node:child_process';
-
 const BASE = process.env.OTTO_LAB_DIR || join(homedir(), 'otto-lab');
 const DIRS = [
   join(BASE, 'reports'),
   join(BASE, 'history'),
 ];
 
-const result = { created: [], existed: [], base: BASE, dependencies: {} };
+const result = { created: [], existed: [], base: BASE };
 
 for (const dir of DIRS) {
   if (existsSync(dir)) {
@@ -29,23 +27,10 @@ for (const dir of DIRS) {
   }
 }
 
-// Check for pdftotext (required for PDF lab report parsing)
-try {
-  execSync('which pdftotext', { stdio: 'pipe' });
-  result.dependencies.pdftotext = 'installed';
-} catch {
-  result.dependencies.pdftotext = 'missing';
-}
-
 console.log(JSON.stringify(result, null, 2));
 
 if (result.created.length > 0) {
-  console.error(`\nCreated ${result.created.length} director${result.created.length === 1 ? 'y' : 'ies'}.`);
+  console.error(`\nCreated ${result.created.length} director${result.created.length === 1 ? 'y' : 'ies'}. You're all set.`);
 } else {
-  console.error('\nAll directories already exist.');
-}
-
-if (result.dependencies.pdftotext === 'missing') {
-  console.error('\nWarning: pdftotext not found. PDF lab report parsing will not work.');
-  console.error('Install it with: apt-get update && apt-get install -y poppler-utils');
+  console.error('\nAll directories already exist. Nothing to do.');
 }

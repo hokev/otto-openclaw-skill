@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * parse-report.mjs — Extract biomarkers from a lab report PDF or CSV.
+ * parse-report.mjs — Extract text/biomarkers from a lab report PDF or CSV.
  *
  * Usage:
- *   node parse-report.mjs <file-path>        # PDF (placeholder) or CSV
+ *   node parse-report.mjs <file-path>
  *
- * CSV files are parsed directly via @ottolab/extraction.
- * PDF extraction requires an LLM provider (not available in standalone mode).
+ * PDF: Extracts text using pdf-parse (pure JS, no system dependencies).
+ *      Outputs the raw text for Claude to parse biomarker values from.
+ * CSV: Parsed directly via @ottolab/extraction.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
-import { runExtractionPipeline } from '@ottolab/extraction';
 
 const filePath = process.argv[2];
 
@@ -44,53 +44,22 @@ try {
   const ext = extname(fullPath).toLowerCase();
 
   if (ext === '.csv') {
-    // CSV extraction — no LLM needed
+    const { runExtractionPipeline } = await import('@ottolab/extraction');
     const csvText = buffer.toString('utf-8');
     const result = await runExtractionPipeline({ csv: csvText });
     console.log(JSON.stringify(result, null, 2));
   } else if (ext === '.pdf') {
-    // PDF extraction — requires LLM provider
-    // For standalone use, output a structured template with instructions
+    const { PDFParse } = await import('pdf-parse');
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    await parser.load();
+    const result = await parser.getText();
     console.log(
       JSON.stringify(
         {
-          status: 'pdf_read',
-          fileSize: buffer.length,
+          status: 'pdf_extracted',
           filePath: fullPath,
-          message:
-            'PDF extraction requires an LLM provider. Use CSV format for standalone parsing, or call via the API for PDF support.',
-          template: {
-            chronologicalAge: null,
-            gender: null,
-            albumin: null,
-            creatinine: null,
-            fastingGlucose: null,
-            hba1c: null,
-            hsCrp: null,
-            lymphocytePercent: null,
-            mcv: null,
-            rdw: null,
-            alp: null,
-            wbc: null,
-            totalCholesterol: null,
-            ldlC: null,
-            hdl: null,
-            triglycerides: null,
-            apoB: null,
-            fastingInsulin: null,
-            uricAcid: null,
-            alt: null,
-            ast: null,
-            bun: null,
-            egfr: null,
-            hemoglobin: null,
-            hematocrit: null,
-            platelets: null,
-            vitaminD: null,
-            testosterone: null,
-            tsh: null,
-            cortisol: null,
-          },
+          pages: result.total,
+          text: result.text,
         },
         null,
         2,

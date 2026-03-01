@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@ottolab/bio-age": "^0.1.0",
-    "@ottolab/shared": "^0.1.0"
+    "@ottolab/shared": "^0.1.0",
+    "pdf-parse": "^2.4.5"
   }
 }

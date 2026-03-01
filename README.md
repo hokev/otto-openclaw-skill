@@ -22,7 +22,7 @@ cd ~/.openclaw/skills/otto-lab/scripts && npm install
 npm run setup
 ```
 
-This creates `~/otto-lab/reports/` and `~/otto-lab/history/` for storing lab files and analysis history. It also checks that PDF parsing dependencies are installed.
+This creates `~/otto-lab/reports/` and `~/otto-lab/history/` for storing lab files and analysis history.
 
 ### Container / remote environments
 
@@ -34,12 +34,6 @@ npm run setup
 ```
 
 All scripts respect this variable. When not set, they default to `~/otto-lab/`.
-
-If `setup` reports that `pdftotext` is missing, install it:
-
-```bash
-apt-get update && apt-get install -y poppler-utils
-```
 
 ## What to Expect
 
