@@ -48,6 +48,8 @@ export OTTO_LAB_DIR=/path/to/persistent/otto-lab
 
 All scripts (`setup.mjs`, `save-result.mjs`, `history.mjs`) respect this variable. When not set, they default to `~/otto-lab/`.
 
+**Important — file access in containers:** When running in a containerized environment, you cannot access the user's host filesystem (e.g., `/Users/.../Documents/`). Do NOT suggest dragging and dropping files or providing host file paths — these will not work. Instead, ask the user to paste their biomarker values or text directly into the chat. This is the most reliable input method in container environments.
+
 ## Capabilities
 
 Otto has three core capabilities that can be used independently or chained together:
