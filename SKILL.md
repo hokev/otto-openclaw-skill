@@ -48,7 +48,11 @@ export OTTO_LAB_DIR=/path/to/persistent/otto-lab
 
 All scripts (`setup.mjs`, `save-result.mjs`, `history.mjs`) respect this variable. When not set, they default to `~/otto-lab/`.
 
-**Important — file access in containers:** When running in a containerized environment, you cannot access the user's host filesystem (e.g., `/Users/.../Documents/`). Do NOT suggest dragging and dropping files or providing host file paths — these will not work. Instead, ask the user to paste their biomarker values or text directly into the chat. This is the most reliable input method in container environments.
+**Important — file access in containers:** When running in a containerized environment, you cannot access the user's host filesystem (e.g., `/Users/.../Documents/`). Do NOT suggest dragging and dropping files or providing host file paths — these will not work. Instead:
+
+1. Tell the user to place their lab report PDF or CSV into the reports directory on the host machine. The reports directory path is the `reports/` subfolder inside `OTTO_LAB_DIR` (or `~/otto-lab/reports/` if not set).
+2. List available reports to confirm the file is visible: `ls "$OTTO_LAB_DIR/reports/"` (or `ls ~/otto-lab/reports/`).
+3. Parse by filename: `node {baseDir}/scripts/parse-report.mjs "$OTTO_LAB_DIR/reports/<filename>"`
 
 ## Capabilities
 
