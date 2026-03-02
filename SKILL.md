@@ -58,15 +58,44 @@ All scripts (`setup.mjs`, `save-result.mjs`, `history.mjs`) respect this variabl
 
 Otto has three core capabilities that can be used independently or chained together:
 
-1. **Parse** - Extract biomarkers from a lab report PDF or text
+1. **Parse** - Extract biomarkers from lab reports, HealthKit, or manual entry
 2. **Bio Age** - Calculate biological age from biomarkers
 3. **Recommend** - Generate evidence-based protocols for out-of-range markers
 
-## 1. Parse Lab Report
+## 1. Data Sources
+
+All data sources follow one pattern: get raw data into the reports directory, read it, normalize into canonical biomarker JSON, then run the analysis pipeline (bio-age, recommend, save).
+
+### Canonical Biomarker Format
+
+All sources normalize into this JSON format. All fields are optional — include only what's available:
+
+```json
+{
+  "chronologicalAge": 35,
+  "gender": "male",
+  "weight": 75.2, "height": 178, "bmi": 23.7, "bodyFatPercent": 18.5,
+  "heartRate": 62, "systolicBP": 118, "diastolicBP": 76,
+  "albumin": 4.2, "creatinine": 0.9, "fastingGlucose": 92,
+  "hba1c": 5.3, "hsCrp": 0.8,
+  "lymphocytePercent": 32, "mcv": 88, "rdw": 13.1,
+  "alp": 65, "wbc": 6.2,
+  "totalCholesterol": 195, "ldlC": 110, "hdl": 58,
+  "triglycerides": 135, "apoB": 95,
+  "fastingInsulin": 5.2, "uricAcid": 5.1,
+  "alt": 22, "ast": 25, "bun": 14, "egfr": 105,
+  "hemoglobin": 15.2, "hematocrit": 44, "platelets": 245,
+  "vitaminD": 42, "testosterone": 650, "tsh": 1.8, "cortisol": 12
+}
+```
+
+Units are US conventional: mg/dL, g/dL, %, U/L, ng/mL, etc. Weight in kg, height in cm.
+
+### Lab Reports (PDF/CSV)
 
 When the user provides a lab report (PDF file path, pasted text, or typed values):
 
-### If a PDF or CSV file path is provided:
+**If a PDF or CSV file path is provided:**
 
 Run `parse-report.mjs` to extract text from the file:
 
@@ -74,50 +103,41 @@ Run `parse-report.mjs` to extract text from the file:
 node {baseDir}/scripts/parse-report.mjs "<path-to-file>"
 ```
 
-For PDFs, this outputs `{ "status": "pdf_extracted", "text": "..." }` with the raw text content. You must then read the extracted text and identify all biomarker values, structuring them as JSON using the format below. You are the LLM — do the extraction yourself from the text. Do NOT ask the user to type out values manually.
+For PDFs, this outputs `{ "status": "pdf_extracted", "text": "..." }` with the raw text content. You must then read the extracted text and identify all biomarker values, structuring them as the canonical JSON above. You are the LLM — do the extraction yourself from the text. Do NOT ask the user to type out values manually.
 
 For CSVs, the script outputs structured biomarker JSON directly.
 
-### If text is pasted or values are typed manually:
+**If text is pasted or values are typed manually:**
 
-Structure the biomarkers as a JSON object following this format. All fields are optional — include only what's available:
+Structure the biomarkers as a JSON object following the canonical format above.
 
-```json
-{
-  "chronologicalAge": 35,
-  "gender": "male",
-  "albumin": 4.2,
-  "creatinine": 0.9,
-  "fastingGlucose": 92,
-  "hba1c": 5.3,
-  "hsCrp": 0.8,
-  "lymphocytePercent": 32,
-  "mcv": 88,
-  "rdw": 13.1,
-  "alp": 65,
-  "wbc": 6.2,
-  "totalCholesterol": 195,
-  "ldlC": 110,
-  "hdl": 58,
-  "triglycerides": 135,
-  "apoB": 95,
-  "fastingInsulin": 5.2,
-  "uricAcid": 5.1,
-  "alt": 22,
-  "ast": 25,
-  "bun": 14,
-  "egfr": 105,
-  "hemoglobin": 15.2,
-  "hematocrit": 44,
-  "platelets": 245,
-  "vitaminD": 42,
-  "testosterone": 650,
-  "tsh": 1.8,
-  "cortisol": 12
-}
+### Apple HealthKit (Optional)
+
+Check if healthsync is available:
+
+```bash
+node {baseDir}/scripts/sync-healthkit.mjs
 ```
 
-Units are US conventional: mg/dL, g/dL, %, U/L, ng/mL, etc.
+If status is `"unavailable"`, skip silently — continue with other data sources. Do NOT suggest installing healthsync unless the user specifically asks about HealthKit integration.
+
+If status is `"synced"` or `"cached"`, the script has saved raw HealthKit JSON to the reports directory. Read the saved file and normalize the data into canonical biomarker format:
+
+- **Body metrics:** weight (kg), height (cm), bodyMassIndex → `bmi`, bodyFatPercentage → `bodyFatPercent` (if value is ≤ 1, multiply by 100 to convert from decimal to percent)
+- **Vitals:** heartRate → `heartRate` (use median of recent readings), bloodPressureSystolic → `systolicBP`, bloodPressureDiastolic → `diastolicBP` (pair systolic/diastolic by closest timestamp)
+- **Supplementary context** (does NOT go into the main biomarker object — see Presenting Supplementary Data below): aggregate sleep, steps, active energy, HRV, resting HR, VO2max, SpO2 as 7-day averages
+
+All values should use the same canonical keys and US conventional units as lab biomarkers.
+
+### Combining Multiple Sources
+
+When multiple data sources are available, merge into one canonical biomarker object:
+
+- Lab values take precedence for any overlapping keys (lab measurements are more precise)
+- HealthKit fills in body composition and vitals that labs don't typically measure
+- Supplementary context from any source goes in a separate `"supplementary"` object alongside biomarkers
+
+The user should see ONE unified health profile. Never show source-specific labels or raw data labels — always use friendly names (e.g., "Heart Rate" not "heartRate" or "HKQuantityTypeIdentifierHeartRate").
 
 ## 2. Calculate Biological Age
 
@@ -196,13 +216,37 @@ The `trend` command reports the direction of change (improving, worsening, or st
 
 ## Full Analysis Flow
 
-When the user asks for a complete blood work analysis, chain all steps:
+When the user asks for a health analysis, chain all steps:
 
-1. Parse the report (or accept manual values)
-2. Calculate biological age
-3. Generate recommendations
-4. Save the combined result with `save-result.mjs`
-5. Present the unified health report, then offer **What's Next**
+1. Scan the reports directory for available data (lab PDFs/CSVs, HealthKit JSON)
+2. Run `sync-healthkit.mjs` to check for fresh HealthKit data
+3. For each source: extract/read raw data, normalize to canonical biomarker format
+4. Merge all sources into one biomarker object (lab values take precedence on overlap)
+5. Calculate biological age
+6. Generate recommendations
+7. Save the combined result with `save-result.mjs` (include `supplementary` if available)
+8. Present the unified health report with Lifestyle Context section (if supplementary data exists), then offer **What's Next**
+
+### Presenting Supplementary Data
+
+When HealthKit or other sources provide supplementary context (sleep, activity, HRV, etc.), present it as a **Lifestyle Context** section in the report. This data enriches recommendations — for example, elevated CRP combined with poor sleep quality suggests prioritizing sleep optimization.
+
+Supplementary data should be included in the saved result as a `"supplementary"` object:
+
+```json
+{
+  "supplementary": {
+    "sleep": { "avgHoursPerNight": 7.2, "days": 7 },
+    "activity": { "avgDailySteps": 8500 },
+    "hrv": { "avg": 45, "unit": "ms" },
+    "restingHeartRate": { "avg": 58, "unit": "bpm" },
+    "vo2max": { "value": 42.5, "unit": "mL/kg/min" },
+    "spo2": { "avg": 97.8, "unit": "%" }
+  }
+}
+```
+
+Never present raw HealthKit type identifiers or source-specific labels to the user.
 
 ### What's Next (post-analysis)
 

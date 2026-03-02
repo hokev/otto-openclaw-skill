@@ -35,6 +35,12 @@ npm run setup
 
 All scripts respect this variable. When not set, they default to `~/otto-lab/`.
 
+## Apple HealthKit (Optional)
+
+If you have healthkit-sync installed and paired with your iPhone, Otto automatically pulls body composition, vitals, and lifestyle data to complement your lab results. This gives you a more complete health picture — sleep, activity, HRV, and more — alongside your blood work.
+
+No configuration needed. If healthsync is available, Otto uses it. If not, it skips silently and analyzes lab data only.
+
 ## What to Expect
 
 Otto Lab runs a 3-step analysis when you share blood work:
@@ -62,7 +68,7 @@ All analysis results are saved locally:
 
 ```
 ~/otto-lab/                # or $OTTO_LAB_DIR
-├── reports/               # Place lab report PDFs/CSVs here
+├── reports/               # Lab report PDFs/CSVs and HealthKit data
 └── history/               # Saved analysis results (one JSON per analysis)
 ```
 

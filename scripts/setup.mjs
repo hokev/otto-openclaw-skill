@@ -8,6 +8,7 @@
  */
 
 import { mkdirSync, existsSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 const BASE = process.env.OTTO_LAB_DIR || join(homedir(), 'otto-lab');
@@ -25,6 +26,14 @@ for (const dir of DIRS) {
     mkdirSync(dir, { recursive: true });
     result.created.push(dir);
   }
+}
+
+// Check optional dependencies
+try {
+  execSync('which healthsync', { stdio: 'pipe' });
+  result.healthkitSync = 'available';
+} catch {
+  result.healthkitSync = 'not installed (optional)';
 }
 
 console.log(JSON.stringify(result, null, 2));
