@@ -113,19 +113,50 @@ Structure the biomarkers as a JSON object following the canonical format above.
 
 ### Apple HealthKit (Optional)
 
-Check if healthsync is available:
+Otto can integrate health data from Apple HealthKit via the `healthsync` CLI, or read Apple Health exports the user has placed in the reports directory.
+
+**Important:** Never fabricate URLs, GitHub repositories, or `brew install` commands for healthsync. If the user asks how to install it, tell them to check with their system administrator or refer to their existing tool documentation.
+
+#### Live sync via healthsync CLI
+
+Check if installed: `which healthsync`
+
+If not installed, skip to manual exports below. If installed, check connection:
 
 ```bash
-node {baseDir}/scripts/sync-healthkit.mjs
+healthsync status
 ```
 
-If status is `"unavailable"`, skip silently — continue with other data sources. Do NOT suggest installing healthsync unless the user specifically asks about HealthKit integration.
+**First-time pairing** — walk the user through these steps:
 
-If status is `"synced"` or `"cached"`, the script has saved raw HealthKit JSON to the reports directory. Read the saved file and normalize the data into canonical biomarker format:
+1. Ensure the iOS Health Sync app is running on their iPhone (same Wi-Fi network)
+2. Discover the device: `healthsync discover`
+3. On iPhone: open Health Sync app → tap "Share" → copy the QR code (Universal Clipboard)
+4. Scan from clipboard: `healthsync scan`
+5. Verify: `healthsync status`
 
-- **Body metrics:** weight (kg), height (cm), bodyMassIndex → `bmi`, bodyFatPercentage → `bodyFatPercent` (if value is ≤ 1, multiply by 100 to convert from decimal to percent)
-- **Vitals:** heartRate → `heartRate` (use median of recent readings), bloodPressureSystolic → `systolicBP`, bloodPressureDiastolic → `diastolicBP` (pair systolic/diastolic by closest timestamp)
-- **Supplementary context** (does NOT go into the main biomarker object — see Presenting Supplementary Data below): aggregate sleep, steps, active energy, HRV, resting HR, VO2max, SpO2 as 7-day averages
+**Fetching data** — once paired, fetch the last 30 days and save to reports:
+
+```bash
+healthsync fetch \
+  --start <30-days-ago>T00:00:00Z --end <today>T23:59:59Z \
+  --types weight,height,bodyMassIndex,bodyFatPercentage,heartRate,restingHeartRate,heartRateVariability,bloodPressureSystolic,bloodPressureDiastolic,bloodOxygen,vo2Max,steps,activeEnergyBurned,sleepAnalysis \
+  --format json > "${OTTO_LAB_DIR:-~/otto-lab}/reports/healthkit-$(date +%Y-%m-%d).json"
+```
+
+Replace `<30-days-ago>` and `<today>` with actual ISO 8601 dates (e.g., `2026-02-01`).
+
+#### Manual Apple Health exports
+
+If healthsync is not available, users can export data from the Apple Health app or via iOS Shortcuts and place CSV/JSON files in the reports directory. Look for files matching `healthkit-*` or any Apple Health export files.
+
+#### Normalizing HealthKit data
+
+Read the saved file (JSON or CSV) and normalize into canonical biomarker format:
+
+- **Body metrics:** weight (kg), height (cm), bodyMassIndex → `bmi`, bodyFatPercentage → `bodyFatPercent` (if ≤ 1, multiply by 100)
+- **Vitals:** heartRate → `heartRate` (median of recent readings), bloodPressureSystolic → `systolicBP`, bloodPressureDiastolic → `diastolicBP` (pair by closest timestamp)
+- **Supplementary context** (does NOT go into the main biomarker object — see Presenting Supplementary Data): aggregate sleep, steps, active energy, HRV, resting HR, VO2max, SpO2 as 7-day averages
 
 All values should use the same canonical keys and US conventional units as lab biomarkers.
 
@@ -218,8 +249,8 @@ The `trend` command reports the direction of change (improving, worsening, or st
 
 When the user asks for a health analysis, chain all steps:
 
-1. Scan the reports directory for available data (lab PDFs/CSVs, HealthKit JSON)
-2. Run `sync-healthkit.mjs` to check for fresh HealthKit data
+1. Scan the reports directory for available data (lab PDFs/CSVs, HealthKit JSON/CSV)
+2. If `healthsync` is available and paired, offer to fetch fresh HealthKit data
 3. For each source: extract/read raw data, normalize to canonical biomarker format
 4. Merge all sources into one biomarker object (lab values take precedence on overlap)
 5. Calculate biological age

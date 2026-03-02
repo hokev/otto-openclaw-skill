@@ -7,8 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.3.0] - 2026-03-02
 
 ### Added
-- `sync-healthkit.mjs` — fetch raw Apple HealthKit data via healthsync (optional dependency)
-- Apple HealthKit integration: body composition, vitals, and lifestyle data complement lab results
+- Apple HealthKit integration via `healthsync` CLI with guided pairing flow (discover → scan QR → fetch)
+- Manual Apple Health export support (CSV/JSON files in reports directory)
 - Multi-source data merging: lab values take precedence, HealthKit fills in gaps
 - Supplementary lifestyle context (sleep, activity, HRV, VO2max, SpO2) in saved results
 - healthsync availability check in `setup.mjs`

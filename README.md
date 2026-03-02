@@ -37,9 +37,9 @@ All scripts respect this variable. When not set, they default to `~/otto-lab/`.
 
 ## Apple HealthKit (Optional)
 
-If you have healthkit-sync installed and paired with your iPhone, Otto automatically pulls body composition, vitals, and lifestyle data to complement your lab results. This gives you a more complete health picture — sleep, activity, HRV, and more — alongside your blood work.
+If you have the `healthsync` CLI installed, Otto can pull body composition, vitals, and lifestyle data directly from your iPhone to complement your lab results. Otto will walk you through the pairing process — connecting your iPhone to your Mac over the local network — if needed.
 
-No configuration needed. If healthsync is available, Otto uses it. If not, it skips silently and analyzes lab data only.
+Alternatively, you can export health data from the Apple Health app and place the files in the reports directory. Otto will read and integrate them automatically.
 
 ## What to Expect
 
