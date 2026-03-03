@@ -145,6 +145,70 @@ Replace date placeholders with actual ISO 8601 dates. Available types: steps, he
 
 If healthsync is not available, users can export from the Apple Health app or iOS Shortcuts and place CSV/JSON files in the reports directory.
 
+#### Health Auto Export — iCloud Drive (recommended automated path)
+
+[Health Auto Export](https://apps.apple.com/us/app/health-auto-export-json-csv/id1115567069) (App Store, by HealthyApps.dev) automatically syncs Apple Health data to iCloud Drive daily. This is the preferred no-friction integration — no Mac app required, works off-network, runs daily in the background.
+
+**Prerequisites:** Premium tier required for automations.
+
+**One-time setup:**
+1. Download **Health Auto Export** from the App Store
+2. Open app → **Automated Exports** → **New Automation**
+3. Type: `iCloud Drive` | Name: `otto-health`
+4. Metrics: Steps, Heart Rate, Heart Rate Variability, Sleep Analysis, Body Mass, Body Fat %, Blood Pressure, VO2 Max, Resting Heart Rate, Active Energy Burned
+5. Format: `JSON` | Period: `Day` | Frequency: `Daily`
+6. On Mac: Finder → iCloud Drive → Auto Export → `otto-health` → right-click → **Keep Downloaded**
+
+> Automations only run while iPhone is unlocked. Files may be a few hours delayed — this is normal.
+
+**Reading files:**
+
+```bash
+ls ~/Library/Mobile\ Documents/com~apple~CloudDocs/Auto\ Export/otto-health/
+```
+
+Files are named by date (`2025-03-01.json`). Each file uses the Health Auto Export v2 JSON schema:
+
+```json
+{
+  "data": {
+    "metrics": [
+      {
+        "name": "step_count",
+        "units": "count",
+        "data": [{ "date": "2025-03-01 00:00:00 +0000", "qty": 9842 }]
+      },
+      {
+        "name": "heart_rate",
+        "units": "count/min",
+        "data": [{ "date": "2025-03-01 08:12:00 +0000", "Avg": 64, "Min": 52, "Max": 88 }]
+      }
+    ]
+  }
+}
+```
+
+Normalize Health Auto Export files using the same rules as HealthKit data below. Additional metric name mappings:
+- `step_count` → `supplementary.activity.avgDailySteps` (sum of `qty` across entries)
+- `heart_rate` → `heartRate` (median of `Avg` values)
+- `resting_heart_rate` → `supplementary.restingHeartRate.avg` (`qty`)
+- `heart_rate_variability_sdnn` → `supplementary.hrv.avg` (`qty`, in ms)
+- `body_mass` → `weight` (most recent `qty`, in kg)
+- `body_fat_percentage` → `bodyFatPercent` (most recent `qty`; multiply by 100 if ≤ 1)
+- `blood_pressure_systolic` → `systolicBP` (most recent `qty`)
+- `blood_pressure_diastolic` → `diastolicBP` (most recent `qty`)
+- `vo2_max` → `supplementary.vo2max.value` (`qty`)
+- `sleep_analysis` (asleep entries) → `supplementary.sleep.avgHoursPerNight` (sum durations ÷ 60)
+- `active_energy_burned` → `supplementary.activity.avgActiveCalories` (sum of `qty`)
+
+When scanning for available data, check the iCloud Drive folder in addition to the reports directory:
+
+```bash
+ls ~/Library/Mobile\ Documents/com~apple~CloudDocs/Auto\ Export/otto-health/ 2>/dev/null
+```
+
+If files are found, read the most recent one (or last 7 days for supplementary averages).
+
 #### Normalizing HealthKit data
 
 Read the saved file and normalize into canonical biomarker format:

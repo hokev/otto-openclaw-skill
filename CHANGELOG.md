@@ -4,6 +4,19 @@ All notable changes to Otto Lab will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-03-03
+
+### Added
+- Health Auto Export (iCloud Drive) as recommended automated wearable data source
+- Step-by-step setup instructions for Health Auto Export iCloud Drive automation
+- Health Auto Export v2 JSON schema documentation and metric name mapping table
+- iCloud Drive folder scanning in the full analysis flow
+- Normalization rules for all Health Auto Export metric types (steps, HR, HRV, sleep, body mass, BP, VO2max, active energy)
+
+### Changed
+- "Apple HealthKit" section restructured: healthsync (live), manual exports, and iCloud Drive are now three distinct subsections
+- Full analysis flow now checks iCloud Drive folder in addition to reports directory
+
 ## [0.3.0] - 2026-03-02
 
 ### Added
