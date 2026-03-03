@@ -37,9 +37,78 @@ All scripts respect this variable. When not set, they default to `~/otto-lab/`.
 
 ## Apple HealthKit (Optional)
 
-If you have the `healthsync` CLI installed, Otto can pull body composition, vitals, and lifestyle data directly from your iPhone to complement your lab results. Otto will walk you through the pairing process — connecting your iPhone to your Mac over the local network — if needed.
+Otto can pull body composition, vitals, and lifestyle data from Apple Health to complement your lab results. Three options are available — pick whichever fits your setup.
 
-Alternatively, you can export health data from the Apple Health app and place the files in the reports directory. Otto will read and integrate them automatically.
+### Option A — Health Auto Export via iCloud Drive (recommended)
+
+[Health Auto Export](https://apps.apple.com/us/app/health-auto-export-json-csv/id1115567069) (App Store, by HealthyApps.dev) syncs Apple Health data to iCloud Drive automatically each day. No Mac app required, works off-network, and runs in the background.
+
+> **Requires:** Health Auto Export Premium tier for automations.
+
+**One-time setup:**
+
+1. Download **Health Auto Export** from the App Store
+2. Open the app → **Automated Exports** → **New Automation**
+3. Set type: `iCloud Drive`, name: `otto-health`
+4. Select metrics: Steps, Heart Rate, Heart Rate Variability, Sleep Analysis, Body Mass, Body Fat %, Blood Pressure, VO2 Max, Resting Heart Rate, Active Energy Burned
+5. Set format: `JSON`, period: `Day`, frequency: `Daily`
+6. On your Mac: Finder → iCloud Drive → Auto Export → `otto-health` → right-click → **Keep Downloaded**
+
+> Automations only run while your iPhone is unlocked, so files may be a few hours delayed — this is normal.
+
+Once files are synced, just ask OpenClaw to include your HealthKit data. It will scan the iCloud Drive folder automatically.
+
+---
+
+### Option B — healthsync live sync
+
+`healthsync` streams data directly from your iPhone to your Mac over Wi-Fi. More real-time than iCloud Drive, but requires a companion iOS app built from source.
+
+**Requirements:**
+
+- **macOS CLI** — install via Homebrew:
+  ```bash
+  brew tap mneves75/tap && brew install healthsync
+  ```
+  Or download binaries from [GitHub Releases](https://github.com/mneves75/ai-health-sync-ios/releases).
+
+- **HealthSync Helper App (iOS)** — not on the App Store; must be built from source with Xcode 26+ targeting iOS 26+:
+  [github.com/mneves75/ai-health-sync-ios](https://github.com/mneves75/ai-health-sync-ios)
+
+**Pair your devices (one-time, both on the same Wi-Fi):**
+
+1. On iPhone: open HealthSync Helper App → **Start Server** → **Show QR Code**
+2. On Mac: run `healthsync scan`
+   (or `healthsync scan --file ~/Desktop/qr.png` if using a saved QR image)
+3. Verify: `healthsync status`
+
+**Fetch data:**
+
+```bash
+healthsync fetch \
+  --start 2025-02-01T00:00:00Z \
+  --end   2025-03-01T23:59:59Z \
+  --types weight,height,bodyMassIndex,bodyFatPercentage,heartRate,restingHeartRate,\
+heartRateVariability,bloodPressureSystolic,bloodPressureDiastolic,vo2Max,\
+steps,activeEnergyBurned,sleepAnalysis \
+  --format json \
+  > ~/otto-lab/reports/healthkit-2025-03-01.json
+```
+
+Once saved to the reports directory, ask OpenClaw to include HealthKit data in your next analysis.
+
+---
+
+### Option C — Manual export from the Health app
+
+No extra tools needed.
+
+1. On iPhone: open **Health** → tap your profile photo (top right) → **Export All Health Data** → **Export**
+2. AirDrop or transfer the `.zip` to your Mac and unzip it
+3. Place any CSV or JSON files into `~/otto-lab/reports/`
+4. Ask OpenClaw to analyze your health data — it will read the exported files automatically
+
+> For more targeted exports (specific metrics, date ranges), use the iOS **Shortcuts** app to export individual Health categories as CSV.
 
 ## What to Expect
 
