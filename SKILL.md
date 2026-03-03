@@ -113,29 +113,24 @@ Structure the biomarkers as a JSON object following the canonical format above.
 
 ### Apple HealthKit (Optional)
 
-Otto can integrate health data from Apple HealthKit via the `healthsync` CLI, or read Apple Health exports the user has placed in the reports directory.
+Otto can integrate HealthKit data via the `healthsync` CLI, or read Apple Health exports placed in the reports directory. **Never fabricate URLs, installation commands, or app names beyond what is documented here.**
 
-**Important:** Never fabricate URLs, GitHub repositories, or `brew install` commands for healthsync. If the user asks how to install it, tell them to check with their system administrator or refer to their existing tool documentation.
+#### Live sync via healthsync
 
-#### Live sync via healthsync CLI
+healthsync has two components — both are required:
 
-Check if installed: `which healthsync`
+1. **macOS CLI** — `brew tap mneves75/tap && brew install healthsync`, or download binaries from https://github.com/mneves75/ai-health-sync-ios/releases
+2. **HealthSync Helper App (iOS)** — not on the App Store. Must be built from source (Xcode 26+, iOS 26+): https://github.com/mneves75/ai-health-sync-ios
 
-If not installed, skip to manual exports below. If installed, check connection:
+Check if CLI is installed: `which healthsync`. If not installed, offer to explain the setup or fall back to manual exports.
 
-```bash
-healthsync status
-```
+**Pairing (one-time)** — both devices must be on the same Wi-Fi network:
 
-**First-time pairing** — walk the user through these steps:
+1. On iPhone: open HealthSync Helper App → "Start Server" → "Show QR Code"
+2. On Mac: `healthsync scan` (reads QR via Universal Clipboard, or `healthsync scan --file ~/Desktop/qr.png`)
+3. Verify: `healthsync status`
 
-1. Ensure the iOS Health Sync app is running on their iPhone (same Wi-Fi network)
-2. Discover the device: `healthsync discover`
-3. On iPhone: open Health Sync app → tap "Share" → copy the QR code (Universal Clipboard)
-4. Scan from clipboard: `healthsync scan`
-5. Verify: `healthsync status`
-
-**Fetching data** — once paired, fetch the last 30 days and save to reports:
+**Fetching data** — once paired:
 
 ```bash
 healthsync fetch \
@@ -144,19 +139,19 @@ healthsync fetch \
   --format json > "${OTTO_LAB_DIR:-~/otto-lab}/reports/healthkit-$(date +%Y-%m-%d).json"
 ```
 
-Replace `<30-days-ago>` and `<today>` with actual ISO 8601 dates (e.g., `2026-02-01`).
+Replace date placeholders with actual ISO 8601 dates. Available types: steps, heartRate, restingHeartRate, heartRateVariability, bloodPressureSystolic, bloodPressureDiastolic, bloodOxygen, vo2Max, weight, height, bodyMassIndex, bodyFatPercentage, sleepAnalysis, sleepREM, sleepCore, sleepDeep, activeEnergyBurned, exerciseTime, workouts.
 
 #### Manual Apple Health exports
 
-If healthsync is not available, users can export data from the Apple Health app or via iOS Shortcuts and place CSV/JSON files in the reports directory. Look for files matching `healthkit-*` or any Apple Health export files.
+If healthsync is not available, users can export from the Apple Health app or iOS Shortcuts and place CSV/JSON files in the reports directory.
 
 #### Normalizing HealthKit data
 
-Read the saved file (JSON or CSV) and normalize into canonical biomarker format:
+Read the saved file and normalize into canonical biomarker format:
 
 - **Body metrics:** weight (kg), height (cm), bodyMassIndex → `bmi`, bodyFatPercentage → `bodyFatPercent` (if ≤ 1, multiply by 100)
 - **Vitals:** heartRate → `heartRate` (median of recent readings), bloodPressureSystolic → `systolicBP`, bloodPressureDiastolic → `diastolicBP` (pair by closest timestamp)
-- **Supplementary context** (does NOT go into the main biomarker object — see Presenting Supplementary Data): aggregate sleep, steps, active energy, HRV, resting HR, VO2max, SpO2 as 7-day averages
+- **Supplementary context** (separate from biomarkers — see Presenting Supplementary Data): aggregate sleep, steps, active energy, HRV, resting HR, VO2max, SpO2 as 7-day averages
 
 All values should use the same canonical keys and US conventional units as lab biomarkers.
 
